@@ -7,8 +7,7 @@ require('dotenv').config()
 
 
 
-// lKd0T7qc8BmL95Nj
-// roomFinder
+
 app.use(cors());
 app.use(express.json());
 
@@ -25,11 +24,24 @@ const client = new MongoClient(uri, {
   }
 });
 
+
+
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
     const roomsCollection = client.db('roomDb').collection('rooms')
+
+    app.get('/rooms', async (req, res) => {
+  const result = await roomsCollection.find().toArray();
+  res.send(result);
+})
+
+
+app.get('/rooms/home', async (req, res) => {
+  const result = await roomsCollection.find().limit(6).toArray();
+  res.send(result);
+})
 
     app.post('/rooms', async(req,res)=>{
       const newRoom = req.body;
