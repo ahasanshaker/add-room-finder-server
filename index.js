@@ -62,6 +62,7 @@ async function run() {
         res.status(500).send({ message: 'Server error' });
       }
     });
+   
 
     // -----------------------------
     // Rooms routes
@@ -75,6 +76,35 @@ async function run() {
       const result = await roomsCollection.find().limit(6).toArray();
       res.send(result);
     });
+     app.get('/rooms/user', async (req, res) => {
+  try {
+    const email = req.query.email;
+    if (!email) return res.status(400).send({ message: 'Email is required' });
+
+    const userRooms = await roomsCollection.find({ userEmail: email }).toArray();
+    res.send(userRooms);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ message: 'Server error' });
+  }
+});
+    app.put('/rooms/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updatedRoom = req.body;
+
+    const { ObjectId } = require('mongodb');
+    const result = await roomsCollection.updateOne(
+      { _id: new ObjectId(id) },
+      { $set: updatedRoom }
+    );
+
+    res.send(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ message: 'Server error' });
+  }
+});
 
     app.post('/rooms', async(req,res) => {
       const newRoom = req.body;
