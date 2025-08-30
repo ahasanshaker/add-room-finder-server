@@ -1,21 +1,15 @@
-const express = require('express')
-const cors = require ('cors')
-const app = express()
-const port = 3000
+const express = require('express');
+const cors = require('cors');
+const app = express();
+const port = 3000;
 const { MongoClient, ServerApiVersion } = require('mongodb');
-require('dotenv').config()
-
-
-
+require('dotenv').config();
 
 app.use(cors());
 app.use(express.json());
 
-
-
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.byszxkc.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
-// Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -24,46 +18,84 @@ const client = new MongoClient(uri, {
   }
 });
 
-
-
 async function run() {
   try {
-    // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
-    const roomsCollection = client.db('roomDb').collection('rooms')
 
+    const roomsCollection = client.db('roomDb').collection('rooms');
+    const usersCollection = client.db('roomDb').collection('users'); // user info collection
+
+    // -----------------------------
+    // Save or update user profile
+    // -----------------------------
+    app.post('/users', async (req, res) => {
+      try {
+        const { name, email, photoURL } = req.body;
+
+        if (!name || !email) {
+          return res.status(400).send({ message: 'Name and email are required' });
+        }
+
+        // Upsert: insert if not exist, update if exist
+        const result = await usersCollection.updateOne(
+          { email }, // filter by email
+          { $set: { name, email, photoURL } }, // set/update fields
+          { upsert: true } // insert if not exists
+        );
+
+        res.status(200).send(result);
+      } catch (error) {
+        console.error(error);
+        res.status(500).send({ message: 'Server error' });
+      }
+    });
+
+    // Get user by email
+    app.get('/users', async (req, res) => {
+      try {
+        const email = req.query.email;
+        if (!email) return res.status(400).send({ message: 'Email is required' });
+
+        const user = await usersCollection.find({ email }).toArray();
+        res.send(user);
+      } catch (error) {
+        res.status(500).send({ message: 'Server error' });
+      }
+    });
+
+    // -----------------------------
+    // Rooms routes
+    // -----------------------------
     app.get('/rooms', async (req, res) => {
-  const result = await roomsCollection.find().toArray();
-  res.send(result);
-})
+      const result = await roomsCollection.find().toArray();
+      res.send(result);
+    });
 
+    app.get('/rooms/home', async (req, res) => {
+      const result = await roomsCollection.find().limit(6).toArray();
+      res.send(result);
+    });
 
-app.get('/rooms/home', async (req, res) => {
-  const result = await roomsCollection.find().limit(6).toArray();
-  res.send(result);
-})
-
-    app.post('/rooms', async(req,res)=>{
+    app.post('/rooms', async(req,res) => {
       const newRoom = req.body;
-      console.log(newRoom)
-      const result= await roomsCollection.insertOne(newRoom);
-      res.send(result)
-    })
-    // Send a ping to confirm a successful connection
+      console.log(newRoom);
+      const result = await roomsCollection.insertOne(newRoom);
+      res.send(result);
+    });
+
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
-    // Ensures that the client will close when you finish/error
     // await client.close();
   }
 }
+
 run().catch(console.dir);
 
-
 app.get('/', (req, res) => {
-  res.send('room finder server is running')
-})
+  res.send('room finder server is running');
+});
 
 app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`)
-})
+  console.log(`Example app listening on port ${port}`);
+});
