@@ -1,4 +1,7 @@
 const express = require('express');
+
+const { ObjectId } = require('mongodb');
+
 const cors = require('cors');
 const app = express();
 const port = 3000;
@@ -62,7 +65,24 @@ async function run() {
         res.status(500).send({ message: 'Server error' });
       }
     });
-   
+
+
+   app.delete('/rooms/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await roomsCollection.deleteOne({ _id: new ObjectId(id) });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).send({ message: 'Room not found', deletedCount: 0 });
+    }
+
+    res.send({ message: 'Room deleted successfully', deletedCount: result.deletedCount });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ message: 'Server error', deletedCount: 0 });
+  }
+});
+
 
     // -----------------------------
     // Rooms routes
