@@ -5,7 +5,7 @@ const { ObjectId } = require('mongodb');
 
     // const { ObjectId } = require('mongodb');
 
-
+// app.use(cors({ origin: "*" })); node
 const cors = require('cors');
 const app = express();
 const port = 3000;
