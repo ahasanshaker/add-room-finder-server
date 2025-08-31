@@ -125,6 +125,35 @@ app.get('/rooms/:id', async (req, res) => {
     res.status(500).send({ message: 'Server error' });
   }
 });
+
+// Add Like to a room
+app.put('/rooms/:id/like', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { userEmail } = req.body; // logged-in user email
+
+    const { ObjectId } = require('mongodb');
+
+    // Find room first
+    const room = await roomsCollection.findOne({ _id: new ObjectId(id) });
+    if (!room) return res.status(404).send({ message: 'Room not found' });
+
+    // Initialize likes count if not exist
+    const newLikes = room.likes ? room.likes + 1 : 1;
+
+    // Update likes
+    await roomsCollection.updateOne(
+      { _id: new ObjectId(id) },
+      { $set: { likes: newLikes } }
+    );
+
+    res.send({ likes: newLikes });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ message: 'Server error' });
+  }
+});
+
     app.put('/rooms/:id', async (req, res) => {
   try {
     const { id } = req.params;
