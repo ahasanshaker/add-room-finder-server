@@ -2,6 +2,10 @@ const express = require('express');
 
 const { ObjectId } = require('mongodb');
 
+
+    // const { ObjectId } = require('mongodb');
+
+
 const cors = require('cors');
 const app = express();
 const port = 3000;
@@ -103,6 +107,19 @@ async function run() {
 
     const userRooms = await roomsCollection.find({ userEmail: email }).toArray();
     res.send(userRooms);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ message: 'Server error' });
+  }
+});
+app.get('/rooms/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const room = await roomsCollection.findOne({ _id: new ObjectId(id) });
+    if (!room) return res.status(404).send({ message: 'Room not found' });
+
+    res.send(room);
   } catch (error) {
     console.error(error);
     res.status(500).send({ message: 'Server error' });
